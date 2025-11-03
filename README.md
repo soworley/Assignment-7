@@ -74,4 +74,4 @@ The provided `deploy.yml` workflow automatically:
 - Backend tests use in-memory storage instead of database for testing reliability
 - GitHub Actions workflow is pre-configured - just copy and configure your secrets
 - All tests should pass locally before setting up your CI/CD pipeline
-- The workflow automatically deploys when tests pass
+- The workflow automatically deploys when tests pass....
