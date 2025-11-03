@@ -42,7 +42,7 @@ const validateRecipe = (recipe) => {
 };
 
 // Get all recipes
-app.get('/api/recipes', (req, res) => {
+app.get('/api/recipess', (req, res) => { // extra "s"
   res.json(recipes);
 });
 
