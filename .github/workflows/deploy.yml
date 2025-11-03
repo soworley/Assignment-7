@@ -64,7 +64,7 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
     
-    # Step 9: Configure Docker for Google Cloud
+    # Step 9: Configure Docker for a Google Cloud
     - name: Configure Docker for Google Cloud
       if: success()
       run: |
