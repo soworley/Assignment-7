@@ -1,4 +1,4 @@
-name: Task Tracker CI/CD Pipeline
+name: Recipe App CI/CD Pipeline
 
 on:
   push:
@@ -11,11 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # Step 1: Checkout code
     - name: Checkout code
       uses: actions/checkout@v4
     
-    # Step 2: Setup Node.js
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -25,31 +23,26 @@ jobs:
           backend/package-lock.json
           frontend/package-lock.json
     
-    # Step 3: Install backend dependencies
     - name: Install backend dependencies
       run: |
         cd backend
         npm ci
     
-    # Step 4: Install frontend dependencies
     - name: Install frontend dependencies
       run: |
         cd frontend
         npm ci
     
-    # Step 5: Run backend tests
     - name: Run backend tests
       run: |
         cd backend
         npm test
     
-    # Step 6: Run frontend tests
     - name: Run frontend tests
       run: |
         cd frontend
         npm test
     
-    # Step 7: Authenticate to Google Cloud
     - name: Authenticate to Google Cloud
       if: success()
       uses: google-github-actions/auth@v1
@@ -57,43 +50,38 @@ jobs:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
         project_id: ${{ secrets.GCP_PROJECT_ID }}
     
-    # Step 8: Setup Google Cloud CLI
     - name: Set up Google Cloud CLI
       if: success()
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
     
-    # Step 9: Configure Docker for a Google Cloud
     - name: Configure Docker for Google Cloud
       if: success()
       run: |
         gcloud auth configure-docker
     
-    # Step 10: Build and push backend image
     - name: Build and push backend image
       if: success()
       run: |
         cd backend
-        docker build -f Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-backend:${{ github.sha }} .
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-backend:${{ github.sha }}
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-backend:${{ github.sha }} .
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-backend:${{ github.sha }}
     
-    # Step 11: Build and push frontend image
     - name: Build and push frontend image
       if: success()
       run: |
         cd frontend
-        # Get backend URL (if not deployed yet, placeholder)
-        BACKEND_URL=$(gcloud run services describe task-tracker-backend --region=${{ secrets.GCP_REGION }} --format='value(status.url)' 2>/dev/null || echo "https://backend-placeholder.run.app")
-        docker build --build-arg VITE_API_URL=$BACKEND_URL -f Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-frontend:${{ github.sha }} .
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-frontend:${{ github.sha }}
+        # Get the backend URL for the frontend build
+        BACKEND_URL=$(gcloud run services describe recipe-backend --region=${{ secrets.GCP_REGION }} --format='value(status.url)' 2>/dev/null || echo "https://recipe-backend-placeholder.run.app")
+        docker build --build-arg VITE_API_URL=$BACKEND_URL -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-frontend:${{ github.sha }} .
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-frontend:${{ github.sha }}
     
-    # Step 12: Deploy backend to Cloud Run
     - name: Deploy backend to Cloud Run
       if: success()
       run: |
-        gcloud run deploy task-tracker-backend \
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-backend:${{ github.sha }} \
+        gcloud run deploy recipe-backend \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-backend:${{ github.sha }} \
           --region ${{ secrets.GCP_REGION }} \
           --platform managed \
           --allow-unauthenticated \
@@ -101,12 +89,11 @@ jobs:
           --memory 512Mi \
           --cpu 1
     
-    # Step 13: Deploy frontend to Cloud Run
     - name: Deploy frontend to Cloud Run
       if: success()
       run: |
-        gcloud run deploy task-tracker-frontend \
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/task-tracker-frontend:${{ github.sha }} \
+        gcloud run deploy recipe-frontend \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/recipe-frontend:${{ github.sha }} \
           --region ${{ secrets.GCP_REGION }} \
           --platform managed \
           --allow-unauthenticated \
@@ -114,9 +101,8 @@ jobs:
           --memory 512Mi \
           --cpu 1
     
-    # Step 14: Output deployed URLs
     - name: Get deployed URLs
       if: success()
       run: |
-        echo "Backend URL: $(gcloud run services describe task-tracker-backend --region=${{ secrets.GCP_REGION }} --format='value(status.url)')"
-        echo "Frontend URL: $(gcloud run services describe task-tracker-frontend --region=${{ secrets.GCP_REGION }} --format='value(status.url)')"
+        echo "Backend URL: $(gcloud run services describe recipe-backend --region=${{ secrets.GCP_REGION }} --format='value(status.url)')"
+        echo "Frontend URL: $(gcloud run services describe recipe-frontend --region=${{ secrets.GCP_REGION }} --format='value(status.url)')"
