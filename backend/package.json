@@ -1,3 +1,5 @@
+npm install
+
 {
   "name": "recipe-backend",
   "version": "1.0.0",
